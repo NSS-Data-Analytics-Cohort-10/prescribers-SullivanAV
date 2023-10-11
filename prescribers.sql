@@ -22,21 +22,35 @@ LIMIT 10;
 
 -- 2. 
 --     a. Which specialty had the most total number of claims (totaled over all drugs)?
-SELECT total_claim_count,specialty_description, npi
+SELECT SUM(total_claim_count) AS claim_count_sum, specialty_description, npi
 FROM prescriber
 INNER JOIN prescription
 USING (npi)
-ORDER BY total_claim_count DESC
+GROUP BY npi, specialty_description
+ORDER BY claim_count_sum DESC
 --Family Practice
 
+
 --     b. Which specialty had the most total number of claims for opioids?
-SELECT total_claim_count, npi, drug_name
+SELECT SUM(total_claim_count) AS sum_total_claim, drug.drug_name, specialty_description 
 FROM prescriber
 INNER JOIN prescription
 USING (npi)
 INNER Join drug
-ON prescriber.npi=drug.npi
-ORDER BY total_claim_count DESC
+ON prescription.drug_name=drug.drug_name
+GROUP BY drug.drug_name, specialty_description
+ORDER BY sum_total_claim DESC
+
+SELECT specialty_description, SUM(total_claim_count) AS sum_of_claim_count
+FROM prescriber AS p1
+LEFT JOIN prescription AS p2
+USING (npi)
+LEFT JOIN drug
+USING (drug_name)
+WHERE opioid_drug_flag='Y'
+GROUP BY specialty_description
+ORDER BY SUM(total_claim_count) DESC;
+--Nurse Practitioner
 
 --     c. **Challenge Question:** Are there any specialties that appear in the prescriber table that have no associated prescriptions in the prescription table?
 
@@ -45,7 +59,7 @@ ORDER BY total_claim_count DESC
 -- 3. 
 --     a. Which drug (generic_name) had the highest total drug cost?
 
-SELECT total_claim_count, npi
+SELECT generic_name, tota_drug_cost
 FROM prescriber
 INNER JOIN prescription
 USING (npi)
