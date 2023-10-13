@@ -59,18 +59,29 @@ ORDER BY SUM(total_claim_count) DESC;
 -- 3. 
 --     a. Which drug (generic_name) had the highest total drug cost?
 
-SELECT generic_name, tota_drug_cost
-FROM prescriber
-INNER JOIN prescription
+SELECT generic_name, SUM(total_drug_cost) AS sum_drug_cost
+FROM prescriber AS p1
+LEFT JOIN prescription AS p2
 USING (npi)
-ORDER BY total_claim_count DESC
+LEFT JOIN drug
+USING (drug_name)
+GROUP BY generic_name
+ORDER BY (sum_drug_cost) DESC;
+
+--"INSULIN GLARGINE,HUM.REC.ANLOG"	104264066.35
 
 --     b. Which drug (generic_name) has the hightest total cost per day? **Bonus: Round your cost per day column to 2 decimal places. Google ROUND to see how this works.**
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
+SELECT generic_name, ROUND(SUM(total_drug_cost)/SUM(total_day_supply), 2) AS daily_cost
+FROM prescriber AS p1
+LEFT JOIN prescription AS p2
 USING (npi)
-ORDER BY total_claim_count DESC
+LEFT JOIN drug
+USING (drug_name)
+GROUP BY generic_name
+ORDER BY (daily_cost) DESC;
+
+--"C1 ESTERASE INHIBITOR"	3495.22
+
 -- 4. 
 --     a. For each drug in the drug table, return the drug name and then a column named 'drug_type' which says 'opioid' for drugs which have opioid_drug_flag = 'Y', says 'antibiotic' for those drugs which have antibiotic_drug_flag = 'Y', and says 'neither' for all other drugs.
 SELECT total_claim_count, npi
@@ -86,11 +97,21 @@ USING (npi)
 ORDER BY total_claim_count DESC
 -- 5. 
 --     a. How many CBSAs are in Tennessee? **Warning:** The cbsa table contains information for all states, not just Tennessee.
-SELECT total_claim_count, npi
+SELECT SUM(cbsa) AS cbsa_count, nppes_provider_state
 FROM prescriber
-INNER JOIN prescription
+right join zip_fips
+USING (fipscounty)
+right JOIN cbsa
+USING (fipscounty)
+ORDER BY cbsa_count DESC
+
+FROM prescriber AS p1
+LEFT JOIN prescription AS p2
 USING (npi)
-ORDER BY total_claim_count DESC
+LEFT JOIN drug
+USING (drug_name)
+GROUP BY generic_name
+ORDER BY (daily_cost) DESC;
 --     b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
 SELECT total_claim_count, npi
 FROM prescriber
