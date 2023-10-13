@@ -32,15 +32,6 @@ ORDER BY claim_count_sum DESC
 
 
 --     b. Which specialty had the most total number of claims for opioids?
-SELECT SUM(total_claim_count) AS sum_total_claim, drug.drug_name, specialty_description 
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-INNER Join drug
-ON prescription.drug_name=drug.drug_name
-GROUP BY drug.drug_name, specialty_description
-ORDER BY sum_total_claim DESC
-
 SELECT specialty_description, SUM(total_claim_count) AS sum_of_claim_count
 FROM prescriber AS p1
 LEFT JOIN prescription AS p2
@@ -84,8 +75,12 @@ ORDER BY (daily_cost) DESC;
 
 -- 4. 
 --     a. For each drug in the drug table, return the drug name and then a column named 'drug_type' which says 'opioid' for drugs which have opioid_drug_flag = 'Y', says 'antibiotic' for those drugs which have antibiotic_drug_flag = 'Y', and says 'neither' for all other drugs.
-SELECT total_claim_count, npi
-FROM prescriber
+SELECT drug_name
+CASE WHEN opioid_drug_flag= 'Y' THEN 'opioid'
+WHEN antibiotic_drug_flag= 'Y' THEN 'antibiotic'
+ELSE 'neither'
+END AS drug_type
+FROM drug
 INNER JOIN prescription
 USING (npi)
 ORDER BY total_claim_count DESC
@@ -97,21 +92,12 @@ USING (npi)
 ORDER BY total_claim_count DESC
 -- 5. 
 --     a. How many CBSAs are in Tennessee? **Warning:** The cbsa table contains information for all states, not just Tennessee.
-SELECT SUM(cbsa) AS cbsa_count, nppes_provider_state
-FROM prescriber
-right join zip_fips
-USING (fipscounty)
-right JOIN cbsa
-USING (fipscounty)
-ORDER BY cbsa_count DESC
+SELECT DISTINCT(cbsaname)
+FROM cbsa
+WHERE cbsaname LIKE '%TN%'
 
-FROM prescriber AS p1
-LEFT JOIN prescription AS p2
-USING (npi)
-LEFT JOIN drug
-USING (drug_name)
-GROUP BY generic_name
-ORDER BY (daily_cost) DESC;
+--10
+
 --     b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
 SELECT total_claim_count, npi
 FROM prescriber
