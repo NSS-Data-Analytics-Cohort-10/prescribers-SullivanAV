@@ -188,5 +188,26 @@ and opioid_drug_flag = 'Y'
 GROUP BY npi, drug_name
 
 --     b. Next, report the number of claims per drug per prescriber. Be sure to include all combinations, whether or not the prescriber had any claims. You should report the npi, the drug name, and the number of claims (total_claim_count).
+
+SELECT p1.npi, d.drug_name, SUM(total_claim_count) AS total_claim_count
+FROM prescriber as p1
+cross join drug as d
+full join prescription as p2
+USING (drug_name)
+WHERE specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+and opioid_drug_flag = 'Y'
+GROUP BY p1.npi, d.drug_name
     
 -- --     c. Finally, if you have not done so already, fill in any missing values for total_claim_count with 0. Hint - Google the COALESCE function.
+
+SELECT p1.npi, d.drug_name,
+	COALESCE(SUM(total_claim_count),1) AS total_claim_count
+FROM prescriber as p1
+cross join drug as d
+full join prescription as p2
+USING (drug_name)
+WHERE specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+and opioid_drug_flag = 'Y'
+GROUP BY p1.npi, d.drug_name
