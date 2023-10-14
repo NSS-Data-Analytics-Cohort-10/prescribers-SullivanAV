@@ -85,11 +85,28 @@ INNER JOIN prescription
 USING (npi)
 ORDER BY total_claim_count DESC
 --     b. Building off of the query you wrote for part a, determine whether more was spent (total_drug_cost) on opioids or on antibiotics. Hint: Format the total costs as MONEY for easier comparision.
-SELECT total_claim_count, npi
-FROM prescriber
+SELECT SUM(total_drug_cost),
+CASE 
+WHEN opioid_drug_flag= 'Y' THEN 'opioid'
+WHEN antibiotic_drug_flag= 'Y' THEN 'antibiotic'
+ELSE 'neither'
+END AS drug_type
+FROM drug
 INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+USING (drug_name)
+WHERE 
+CASE 
+WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+WHEN antibiotic_drug_flag = 'Y' THEN 'antibiotic'
+ELSE 'neither'
+END <> 'neither'
+GROUP BY CASE
+WHEN opioid_drug_flag = 'Y' THEN 'opioid'
+WHEN antibiotic_drug_flag = 'Y' THEN 'antibiotic'
+ELSE 'neither'
+END
+--38435121.26	"antibiotic"
+--105080626.37	"opioid"
 -- 5. 
 --     a. How many CBSAs are in Tennessee? **Warning:** The cbsa table contains information for all states, not just Tennessee.
 SELECT DISTINCT(cbsaname)
@@ -99,11 +116,12 @@ WHERE cbsaname LIKE '%TN%'
 --10
 
 --     b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+SELECT DISTINCT cbsa, population
+FROM cbsa
+INNER JOIN population
+USING (fipscounty)
+ORDER BY population DESC
+
 --     c. What is the largest (in terms of population) county which is not included in a CBSA? Report the county name and population.
 SELECT total_claim_count, npi
 FROM prescriber
