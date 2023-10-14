@@ -76,7 +76,8 @@ ORDER BY (daily_cost) DESC;
 -- 4. 
 --     a. For each drug in the drug table, return the drug name and then a column named 'drug_type' which says 'opioid' for drugs which have opioid_drug_flag = 'Y', says 'antibiotic' for those drugs which have antibiotic_drug_flag = 'Y', and says 'neither' for all other drugs.
 SELECT drug_name
-CASE WHEN opioid_drug_flag= 'Y' THEN 'opioid'
+CASE 
+WHEN opioid_drug_flag= 'Y' THEN 'opioid'
 WHEN antibiotic_drug_flag= 'Y' THEN 'antibiotic'
 ELSE 'neither'
 END AS drug_type
@@ -116,11 +117,15 @@ WHERE cbsaname LIKE '%TN%'
 --10
 
 --     b. Which cbsa has the largest combined population? Which has the smallest? Report the CBSA name and total population.
-SELECT DISTINCT cbsa, population
+SELECT cbsaname, SUM(population) AS sum_pop
 FROM cbsa
 INNER JOIN population
 USING (fipscounty)
-ORDER BY population DESC
+GROUP BY cbsaname
+ORDER BY sum_pop DESC
+
+--largest="Nashville-Davidson--Murfreesboro--Franklin, TN"	1830410
+--smallest="Morristown, TN"	116352
 
 --     c. What is the largest (in terms of population) county which is not included in a CBSA? Report the county name and population.
 SELECT total_claim_count, npi
@@ -130,30 +135,57 @@ USING (npi)
 ORDER BY total_claim_count DESC
 -- 6. 
 --     a. Find all rows in the prescription table where total_claims is at least 3000. Report the drug_name and the total_claim_count.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+SELECT drug_name, SUM(total_claim_count) AS total_count
+FROM prescription
+WHERE total_claim_count >= 3000
+GROUP BY drug_name
+ORDER BY total_count DESC
+--"LEVOTHYROXINE SODIUM"	9262
+--"OXYCODONE HCL"	4538
+--"LISINOPRIL"	3655
+--"GABAPENTIN"	3531
+--"HYDROCODONE-ACETAMINOPHEN"	3376
+--"MIRTAZAPINE"	3085
+--"FUROSEMIDE"	3083
+
 --     b. For each instance that you found in part a, add a column that indicates whether the drug is an opioid.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+
+SELECT drug_name,
+	CASE WHEN opioid_drug_flag = 'Y' then 'opioid'
+ELSE 'not an opioid' END AS drug_type,
+SUM(total_claim_count) AS total_count
+FROM prescription
+INNER JOIN drug
+USING (drug_name)
+WHERE total_claim_count >=3000
+GROUP BY drug_name, drug_type
+ORDER BY total_count DESC
+
 --     c. Add another column to you answer from the previous part which gives the prescriber first and last name associated with each row.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+SELECT drug_name,
+	CASE WHEN opioid_drug_flag = 'Y' then 'opioid'
+ELSE 'not an opioid' END AS drug_type,
+SUM(total_claim_count) AS total_claim_count, nppes_provider_first_name, nppes_provider_last_org_name
+FROM prescription
+INNER JOIN drug 
+USING (drug_name)
+Inner join prescriber
+Using (npi)
+WHERE total_claim_count >= 3000
+GROUP BY drug_name, drug_type, nppes_provider_first_name, nppes_provider_last_org_name
+Order by sum(total_claim_count) DESC
+
 -- 7. The goal of this exercise is to generate a full list of all pain management specialists in Nashville and the number of claims they had for each opioid. **Hint:** The results from all 3 parts will have 637 rows.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+
 --     a. First, create a list of all npi/drug_name combinations for pain management specialists (specialty_description = 'Pain Management) in the city of Nashville (nppes_provider_city = 'NASHVILLE'), where the drug is an opioid (opiod_drug_flag = 'Y'). **Warning:** Double-check your query before running it. You will only need to use the prescriber and drug tables since you don't need the claims numbers yet.
+
+SELECT npi, drug_name
+FROM prescriber
+cross join drug
+WHERE specialty_description = 'Pain Management'
+AND nppes_provider_city = 'NASHVILLE'
+and opioid_drug_flag = 'Y'
+GROUP BY npi, drug_name
 
 --     b. Next, report the number of claims per drug per prescriber. Be sure to include all combinations, whether or not the prescriber had any claims. You should report the npi, the drug name, and the number of claims (total_claim_count).
     
