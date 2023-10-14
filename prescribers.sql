@@ -128,11 +128,17 @@ ORDER BY sum_pop DESC
 --smallest="Morristown, TN"	116352
 
 --     c. What is the largest (in terms of population) county which is not included in a CBSA? Report the county name and population.
-SELECT total_claim_count, npi
-FROM prescriber
-INNER JOIN prescription
-USING (npi)
-ORDER BY total_claim_count DESC
+SELECT county, SUM(population) AS sum_pop
+FROM cbsa
+full join fips_county
+USING (fipscounty)
+FULL JOIN population
+USing (fipscounty)
+WHERE cbsa is NULL and population IS NOT NULL
+GROUP BY cbsa, county
+ORDER BY sum_pop DESC
+--"SEVIER"	95523
+
 -- 6. 
 --     a. Find all rows in the prescription table where total_claims is at least 3000. Report the drug_name and the total_claim_count.
 SELECT drug_name, SUM(total_claim_count) AS total_count
